@@ -22,9 +22,9 @@ def accept_request(offer_in: OfferAccept, db: Session = Depends(get_db)):
     if not supplier:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found")
 
-    supplier_categories = {p.category for p in supplier.products}
-    if req.category not in supplier_categories:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't carry that category or product for this request.")
+    # supplier_categories = {p.category for p in supplier.products}
+    # if req.category not in supplier_categories:
+    #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't carry that category or product for this request.")
 
     existing_offer = db.query(Offer).filter_by(request_id=req.id, supplier_id=supplier.id).first()
     if existing_offer:
@@ -43,7 +43,7 @@ def accept_request(offer_in: OfferAccept, db: Session = Depends(get_db)):
 
 # 1) Put the static route /accept_request/ BEFORE the dynamic /{request_id}/ route
 @offer_router.post("/reject_request/", response_model=SuccessMessage)
-def accept_request(offer_in: OfferAccept, db: Session = Depends(get_db)):
+def reject_request(offer_in: OfferAccept, db: Session = Depends(get_db)):
     req = db.query(RequestPost).filter_by(id=offer_in.request_id).first()
     if not req:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found or not open")
@@ -52,9 +52,9 @@ def accept_request(offer_in: OfferAccept, db: Session = Depends(get_db)):
     if not supplier:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found")
 
-    supplier_categories = {p.category for p in supplier.products}
-    if req.category not in supplier_categories:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't carry that category or product for this request.")
+    # supplier_categories = {p.category for p in supplier.products}
+    # if req.category not in supplier_categories:
+    #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't carry that category or product for this request.")
 
     existing_offer = db.query(Offer).filter_by(request_id=req.id, supplier_id=supplier.id).first()
     if existing_offer:
