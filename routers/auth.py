@@ -79,19 +79,16 @@ async def forgot_password(request: PasswordResetRequest, db: Session = Depends(g
 async def login(form_data: AuthLogin, db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.email, form_data.password)
 
-    personal_img = next((img for img in user.profile_images if img.type == "personal"), None)
-    business_img = next((img for img in user.profile_images if img.type == "business"), None)
-
     return LoginResponse(
         user_id=user.id,
         status=user.status,
         role=user.role,
         name=user.name,
-        profile_image=f"/users/image/{user.id}/personal" if personal_img else None,
+        profile_image=user.personal_image_path,
         email=user.email,
-        business_name=user.business_name if user.role == "supplier" else None,
+        business_name=user.business_name,
         business_description=user.business_description,
-        business_profile_image=f"/users/image/{user.id}/business" if business_img else None
+        business_profile_image=user.business_image_path
     )
 
 
