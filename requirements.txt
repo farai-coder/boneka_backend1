@@ -7,3 +7,5 @@ email-validator
 python-multipart
 uuid
 boto3
+psycopg2-binary
+python-dotenv
