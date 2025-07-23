@@ -152,7 +152,7 @@ async def create_request(
     return SuccessMessage(message="Request created successfully")
 
 # Get all request posts
-@request_router.get("/", response_model=List[RequestBase]) # Corrected path from /get_all to /
+@request_router.get("/", response_model=List[RequestResponse]) # Corrected path from /get_all to /
 async def get_all_requests(db: Session = Depends(get_db)):
     requests = db.query(RequestPost).all()
     return requests
