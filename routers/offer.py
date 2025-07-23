@@ -11,9 +11,8 @@ from uuid import UUID
 
 offer_router = APIRouter(prefix="/offers", tags=["offers"])
 
-
 # 1) Put the static route /accept_request/ BEFORE the dynamic /{request_id}/ route
-@offer_router.post("/accept_request/", response_model=OfferRead)
+@offer_router.post("/accept_request/", response_model=SuccessMessage)
 def accept_request(offer_in: OfferAccept, db: Session = Depends(get_db)):
     req = db.query(RequestPost).filter_by(id=offer_in.request_id).first()
     if not req:
@@ -35,12 +34,42 @@ def accept_request(offer_in: OfferAccept, db: Session = Depends(get_db)):
         request_id=req.id,
         supplier_id=supplier.id,
         proposed=req.offer_price,
+        status="accepted"
     )
     db.add(offer)
     db.commit()
     db.refresh(offer)
-    return offer
+    return SuccessMessage(message="Offer accepted successfully")
 
+# 1) Put the static route /accept_request/ BEFORE the dynamic /{request_id}/ route
+@offer_router.post("/reject_request/", response_model=SuccessMessage)
+def accept_request(offer_in: OfferAccept, db: Session = Depends(get_db)):
+    req = db.query(RequestPost).filter_by(id=offer_in.request_id).first()
+    if not req:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found or not open")
+
+    supplier = db.query(User).filter(User.id == offer_in.supplier_id).first()
+    if not supplier:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found")
+
+    supplier_categories = {p.category for p in supplier.products}
+    if req.category not in supplier_categories:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't carry that category or product for this request.")
+
+    existing_offer = db.query(Offer).filter_by(request_id=req.id, supplier_id=supplier.id).first()
+    if existing_offer:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An offer from this supplier for this request already exists.")
+
+    offer = Offer(
+        request_id=req.id,
+        supplier_id=supplier.id,
+        proposed=req.offer_price,
+        status="rejected"
+    )
+    db.add(offer)
+    db.commit()
+    db.refresh(offer)
+    return SuccessMessage(message="Offer rejected successfully")
 
 # 2) Dynamic route with UUID parameter comes next
 @offer_router.post("/{request_id}/", response_model=OfferRead)

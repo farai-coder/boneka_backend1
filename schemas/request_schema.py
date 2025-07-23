@@ -45,7 +45,7 @@ class RequestResponse(BaseModel):
     offer_price: float
     customer_id: UUID
     image_path: Optional[str]  # or List[str] if you store multiple images
-    status: str
+    
 
     class Config:
         from_attributes = True  # This is for Pydantic v2 (formerly `orm_mode = True` in v1)
