@@ -13,8 +13,6 @@ from dotenv import load_dotenv
 import boto3
 from botocore.exceptions import NoCredentialsError
 
-load_dotenv()
-
 # Configuration from environment variables
 SPACES_REGION = os.getenv("SPACES_REGION")
 SPACES_ENDPOINT = os.getenv("SPACES_ENDPOINT")

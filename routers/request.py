@@ -18,8 +18,6 @@ import os
 from schemas.user_schema import SuccessMessage
 from botocore.exceptions import NoCredentialsError
 
-load_dotenv()
-
 # Configuration from environment variables
 SPACES_REGION = os.getenv("SPACES_REGION")
 SPACES_ENDPOINT = os.getenv("SPACES_ENDPOINT")

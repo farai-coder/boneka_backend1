@@ -16,7 +16,6 @@ import boto3
 from botocore.exceptions import NoCredentialsError
 
 # Load environment variables from .env file
-load_dotenv()
 
 # Configuration from environment variables
 SPACES_REGION = os.getenv("SPACES_REGION")

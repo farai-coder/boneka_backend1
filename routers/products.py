@@ -21,7 +21,6 @@ from schemas.supplier_schema import SupplierResponse
 from schemas.user_schema import SuccessMessage
 import os
 # Load environment variables from .env file
-load_dotenv()
 
 # Configuration from environment variables
 SPACES_REGION = os.getenv("SPACES_REGION")
