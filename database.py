@@ -4,13 +4,6 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Load .env file — assumes it is in the same directory as this file
-env_path = Path(__file__).parent / "routers" / ".env"
-if not env_path.exists():
-    raise FileNotFoundError(f".env file not found at {env_path}")
-
-load_dotenv(dotenv_path=env_path)
-
 # Load variables with fallback defaults for safety
 DB_USERNAME = os.getenv("DB_USERNAME")
 DB_PASSWORD = os.getenv("DB")
