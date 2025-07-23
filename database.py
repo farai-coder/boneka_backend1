@@ -4,6 +4,25 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
+
+# Define possible locations where Render might mount your secret .env file
+possible_paths = [
+    Path(__file__).parent / '.env',      # app root folder (likely)
+    Path('/etc/secrets/.env'),           # Render's secret files folder (possible alternative)
+]
+
+env_path = None
+for path in possible_paths:
+    if path.exists():
+        env_path = path
+        break
+
+if env_path:
+    load_dotenv(dotenv_path=env_path)
+    print(f"Loaded .env from: {env_path}")
+else:
+    print("No .env file found in expected secret file locations.")
+
 DB_USERNAME = os.getenv("DB_USERNAME")
 DB_PASSWORD = os.getenv("DB_PASSWORD")  # FIXED here
 DB_HOST = os.getenv("DB_HOST")
