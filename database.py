@@ -13,7 +13,7 @@ load_dotenv(dotenv_path=env_path)
 
 # Load variables with fallback defaults for safety
 DB_USERNAME = os.getenv("DB_USERNAME")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_PASSWORD = os.getenv("DB")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
