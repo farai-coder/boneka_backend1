@@ -137,6 +137,7 @@ async def create_request(
         quantity=request_data.quantity,
         offer_price=request_data.offer_price,
         customer_id=request_data.customer_id,
+        status=request_data.status,
         image_path=image_url  # ✅ Save single image URL
     )
 
