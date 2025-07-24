@@ -7,7 +7,7 @@ from database import get_db
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Form, status, Request # Import Request
 from models import Product, User
 from schemas.products_schema import Product as ProductBase, ProductCreate, ProductResponse # Assuming Product is renamed to ProductBase in schemas
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from dotenv import load_dotenv
 import boto3
@@ -112,42 +112,41 @@ def _get_image_url(request: Request, image_id: UUID) -> str:
     # The 'get_product_image_route' should match the name of your route function for fetching images
     return str(request.url_for("get_product_image_route", image_id=image_id))
 
+# --- THE create_product ENDPOINT ---
 @product_router.post("/", response_model=SuccessMessage, status_code=status.HTTP_201_CREATED)
 async def create_product(
     name: str = Form(...),
     category: str = Form(...),
-    description: str = Form(None),
+    description: str | None = Form(None),
     price: float = Form(...),
     supplier_id: str = Form(...),
-    image: UploadFile = File(...),   # Required image upload
-    db: Session = Depends(get_db),
+    image: UploadFile = File(...),
+    db: Session = Depends(get_db)
 ):
-    # Optionally validate supplier exists (uncomment if needed)
-    # supplier = db.query(User).filter(User.id == supplier_id).first()
-    # if not supplier:
-    #     raise HTTPException(status_code=404, detail="Supplier not found")
+    # Verify supplier exists
+    supplier = db.query(User).filter(User.id == supplier_id).first()
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found")
 
-    # Validate image is an actual image (content_type check)
+    # Image validation
     if not image.content_type or not image.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail=f"File {image.filename} is not an image.")
+        raise HTTPException(status_code=400, detail=f"File '{image.filename}' is not a valid image.")
 
-    # Read and upload image to storage
     contents = await image.read()
-    image_uuid = uuid4()
+    image_uuid = uuid.uuid4()
     spaces_filename = f"products/images/{image_uuid}"
 
     image_url = upload_file_to_spaces(contents, spaces_filename, image.content_type)
     if image_url is None:
-        raise HTTPException(status_code=500, detail="Failed to upload image to DigitalOcean Spaces.")
+        raise HTTPException(status_code=500, detail=f"Failed to upload image '{image.filename}'.")
 
-    # Create Product DB object
     db_product = Product(
         name=name,
         category=category,
         description=description,
         price=price,
         supplier_id=supplier_id,
-        image_path=image_url,
+        image_path=image_url
     )
 
     try:
@@ -160,6 +159,13 @@ async def create_product(
         raise HTTPException(status_code=500, detail=f"Failed to create product: {e}")
 
     return SuccessMessage(message="Product created successfully")
+
+
+
+
+
+
+
 
 @product_router.get("/{product_id}", response_model=ProductBase)
 def get_product(
