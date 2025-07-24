@@ -7,7 +7,7 @@ from database import get_db
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Form, status, Request # Import Request
 from models import Product, User
 from schemas.products_schema import Product as ProductBase, ProductCreate, ProductResponse # Assuming Product is renamed to ProductBase in schemas
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from dotenv import load_dotenv
 import boto3
@@ -114,40 +114,44 @@ def _get_image_url(request: Request, image_id: UUID) -> str:
 
 @product_router.post("/", response_model=SuccessMessage, status_code=status.HTTP_201_CREATED)
 async def create_product(
-    product_data: ProductCreate = Depends(),
-    image: UploadFile = File(...),  # Single file
-    db: Session = Depends(get_db)
+    name: str = Form(...),
+    category: str = Form(...),
+    description: str = Form(None),
+    price: float = Form(...),
+    supplier_id: str = Form(...),
+    image: UploadFile = File(...),   # Required image upload
+    db: Session = Depends(get_db),
 ):
-    # supplier = db.query(User).filter(User.id == product_data.supplier_id).first()
+    # Optionally validate supplier exists (uncomment if needed)
+    # supplier = db.query(User).filter(User.id == supplier_id).first()
     # if not supplier:
     #     raise HTTPException(status_code=404, detail="Supplier not found")
 
-    db_product = Product(
-        name=product_data.name,
-        description=product_data.description,
-        price=product_data.price,
-        category=product_data.category,
-        supplier_id=product_data.supplier_id
-    )
-
-    db.add(db_product)
-    db.flush()
-
-    if not image.content_type.startswith("image/"):
+    # Validate image is an actual image (content_type check)
+    if not image.content_type or not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail=f"File {image.filename} is not an image.")
 
+    # Read and upload image to storage
     contents = await image.read()
-    image_uuid = uuid.uuid4()
+    image_uuid = uuid4()
     spaces_filename = f"products/images/{image_uuid}"
 
     image_url = upload_file_to_spaces(contents, spaces_filename, image.content_type)
     if image_url is None:
         raise HTTPException(status_code=500, detail="Failed to upload image to DigitalOcean Spaces.")
 
-    # Save single image as a list with one element
-    db_product.image_path = image_url
+    # Create Product DB object
+    db_product = Product(
+        name=name,
+        category=category,
+        description=description,
+        price=price,
+        supplier_id=supplier_id,
+        image_path=image_url,
+    )
 
     try:
+        db.add(db_product)
         db.commit()
         db.refresh(db_product)
     except Exception as e:
