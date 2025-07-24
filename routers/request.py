@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from database import get_db
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status # Removed duplicate HTTPException, added status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, logger, status # Removed duplicate HTTPException, added status
 from models import RequestPost, User, Product
 from schemas.request_schema import RequestCreate, Request as RequestBase, RequestImageRead, RequestResponse, RequestUpdate # Assuming Request is renamed to RequestBase
 from uuid import UUID
@@ -106,27 +106,49 @@ request_router = APIRouter(prefix="/requests", tags=["requests"]) # Added prefix
 # CRUD operations for RequestPost
 
 # Create a new request post
-
 @request_router.post("/", response_model=SuccessMessage, status_code=status.HTTP_201_CREATED)
 async def create_request(
+    request: Request, # <-- Add this parameter
     request_data: RequestCreate = Depends(),
-    image: UploadFile = File(...),  # Single image upload
+    image: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-    # Verify customer exists
+    logger.info("--- Received Request in create_request ---")
+    # Try to print raw form data for deeper inspection
+    try:
+        form_data = await request.form()
+        logger.info(f"Raw Form Data: {form_data}")
+        for key, value in form_data.items():
+            if isinstance(value, UploadFile):
+                logger.info(f"  File Field: {key}, Filename: {value.filename}, Content-Type: {value.content_type}, Size: {value.size}")
+            else:
+                logger.info(f"  Field: {key}, Value: {value}")
+    except Exception as e:
+        logger.error(f"Error accessing raw form data: {e}")
+
+    # Logging parsed data
+    logger.info(f"Parsed Request Data (RequestCreate): {request_data.model_dump_json()}") # Use .model_dump_json() for Pydantic v2+
+    logger.info(f"Parsed Image: Filename={image.filename}, Content-Type={image.content_type}, Size={image.size}")
+
+    # Backend validations (these would cause 400 or 404, not 422 directly from Pydantic)
     customer = db.query(User).filter(User.id == request_data.customer_id).first()
     if not customer:
+        logger.warning(f"Customer {request_data.customer_id} not found.")
         raise HTTPException(status_code=404, detail="Customer not found")
 
     if not image.content_type or not image.content_type.startswith("image/"):
+        logger.warning(f"File '{image.filename}' is not a valid image. Content-Type: {image.content_type}")
         raise HTTPException(status_code=400, detail=f"File '{image.filename}' is not a valid image.")
 
+    # --- Your existing logic ---
     contents = await image.read()
+    logger.info(f"Successfully read image contents (length: {len(contents)} bytes)")
     image_uuid = uuid.uuid4()
     spaces_filename = f"requests/images/{image_uuid}"
 
     image_url = upload_file_to_spaces(contents, spaces_filename, image.content_type)
     if image_url is None:
+        logger.error(f"Failed to upload image '{image.filename}' to spaces.")
         raise HTTPException(status_code=500, detail=f"Failed to upload image '{image.filename}'.")
 
     # Create and save the request with image path
@@ -137,18 +159,21 @@ async def create_request(
         quantity=request_data.quantity,
         offer_price=request_data.offer_price,
         customer_id=request_data.customer_id,
-        image_path=image_url  # ✅ Save single image URL
+        image_path=image_url
     )
 
     try:
         db.add(db_request)
         db.commit()
         db.refresh(db_request)
+        logger.info("Request created successfully in DB.")
     except Exception as e:
         db.rollback()
         delete_file_from_spaces(spaces_filename)
+        logger.error(f"Failed to create request in DB: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to create request: {e}")
 
+    logger.info("--- Request Processing Complete ---")
     return SuccessMessage(message="Request created successfully")
 
 # Get all request posts
