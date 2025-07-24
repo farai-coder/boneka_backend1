@@ -115,56 +115,58 @@ def _get_image_url(request: Request, image_id: UUID) -> str:
 # --- THE create_product ENDPOINT ---
 @product_router.post("/", response_model=SuccessMessage, status_code=status.HTTP_201_CREATED)
 async def create_product(
+    # These parameters explicitly tell FastAPI to expect multipart/form-data fields
     name: str = Form(...),
     category: str = Form(...),
-    description: str | None = Form(None),
+    description: str | None = Form(None), # This field is optional
     price: float = Form(...),
-    supplier_id: str = Form(...),
-    image: UploadFile = File(...),
+    supplier_id: str = Form(...), # Expects a string from the form
+    image: UploadFile = File(...), # Expects a file from the form
     db: Session = Depends(get_db)
 ):
-    # Verify supplier exists
+    # 1. Validate Supplier Existence
     supplier = db.query(User).filter(User.id == supplier_id).first()
     if not supplier:
         raise HTTPException(status_code=404, detail="Supplier not found")
 
-    # Image validation
+    # 2. Validate Image Content Type
     if not image.content_type or not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail=f"File '{image.filename}' is not a valid image.")
 
+    # 3. Read Image Contents
     contents = await image.read()
-    image_uuid = uuid.uuid4()
-    spaces_filename = f"products/images/{image_uuid}"
 
+    # 4. Generate Unique Filename for Storage
+    image_uuid = uuid.uuid4()
+    spaces_filename = f"products/images/{image_uuid}" # Consistent path for products
+
+    # 5. Upload Image to Cloud Storage
     image_url = upload_file_to_spaces(contents, spaces_filename, image.content_type)
     if image_url is None:
         raise HTTPException(status_code=500, detail=f"Failed to upload image '{image.filename}'.")
 
+    # 6. Create Product Database Entry
     db_product = Product(
         name=name,
         category=category,
         description=description,
         price=price,
         supplier_id=supplier_id,
-        image_path=image_url
+        image_path=image_url # Store the URL/path returned by your upload function
     )
 
+    # 7. Commit to Database and Handle Errors/Rollback
     try:
         db.add(db_product)
-        db.commit()
-        db.refresh(db_product)
+        db.commit()      # Persist changes to the database
+        db.refresh(db_product) # Refresh the object to get any DB-generated fields (like ID)
     except Exception as e:
-        db.rollback()
-        delete_file_from_spaces(spaces_filename)
+        db.rollback() # Rollback transaction if an error occurs
+        delete_file_from_spaces(spaces_filename) # Attempt to clean up uploaded file from Spaces
         raise HTTPException(status_code=500, detail=f"Failed to create product: {e}")
 
+    # 8. Return Success Message
     return SuccessMessage(message="Product created successfully")
-
-
-
-
-
-
 
 
 @product_router.get("/{product_id}", response_model=ProductBase)
