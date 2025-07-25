@@ -16,11 +16,16 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifies if a given password matches the stored hash."""
     return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
+# def hash_password(password: str) -> str:
+#     """Hashes a password using bcrypt."""
+#     salt = bcrypt.gensalt()
+#     hashed_password = bcrypt.hashpw(password.encode(), salt)
+#     return hashed_password.decode()
+
 def hash_password(password: str) -> str:
-    """Hashes a password using bcrypt."""
     salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(password.encode(), salt)
-    return hashed_password.decode()
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed_password.decode('utf-8')  # store as string in DBef hash_password(password: str) -> str:
 
 
 def create_reset_pin(length: int = 8) -> str:
