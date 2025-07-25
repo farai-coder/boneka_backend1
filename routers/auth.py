@@ -29,14 +29,19 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 #     salt = bcrypt.gensalt()
 #     return bcrypt.hashpw(password, salt)
 
-def hash_password(password):
-    print(type(password))  # Check input is str
-    if isinstance(password, str):
-        password = password.encode('utf-8')
+# def hash_password(password):
+#     print(type(password))  # Check input is str
+#     if isinstance(password, str):
+#         password = password.encode('utf-8')
+#     salt = bcrypt.gensalt()
+#     hashed_password = bcrypt.hashpw(password, salt)
+#     print(hashed_password)  # Print once
+#     return hashed_password
+
+def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(password, salt)
-    print(hashed_password)  # Print once
-    return hashed_password
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed_password.decode('utf-8')  # store as string in DBef hash_password(password: str) -> str:
 
 def create_reset_pin(length: int = 8) -> str:
     """Generates a random reset PIN."""
