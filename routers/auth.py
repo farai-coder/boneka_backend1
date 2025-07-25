@@ -22,11 +22,12 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 #     hashed_password = bcrypt.hashpw(password.encode(), salt)
 #     return hashed_password.decode()
 
-def hash_password(password: str) -> str:
+def hash_password(password):
+    print(type(password))  # Should be <class 'str'>
+    if isinstance(password, str):
+        password = password.encode('utf-8')  # encode only if string
     salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
-    return hashed_password.decode('utf-8')  # store as string in DBef hash_password(password: str) -> str:
-
+    return bcrypt.hashpw(password, salt)
 
 def create_reset_pin(length: int = 8) -> str:
     """Generates a random reset PIN."""
