@@ -73,7 +73,7 @@ def get_image_urls(user: User) -> List[str]:
         urls.append(f"/users/image/{user.id}/{img.type}")
     return urls
 
-@user_router.post("/", response_model=SuccessMessage)
+@user_router.post("/", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == user.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
