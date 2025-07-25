@@ -12,10 +12,6 @@ class AuthLogin(BaseModel):
     email: EmailStr
     password : str
 
-class AddPassword(BaseModel):
-    email: EmailStr
-    password : str
-
 class AuthResponse(BaseModel):
     user_id : UUID
     status : str
