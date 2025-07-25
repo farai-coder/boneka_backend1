@@ -98,7 +98,16 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
-    return {"message": "User created successfully"}
+    return UserResponse(
+        email=new_user.email,
+        date_of_birth=new_user.date_of_birth,
+        name=new_user.name,
+        gender=new_user.gender,
+        surname=new_user.surname,
+        phone_number=new_user.phone_number,
+        personal_image_path=new_user.personal_image_path,
+        user_id=new_user.id  # assuming `id` is UUID and maps to `user_id`
+    )
 
 @user_router.post("/image")
 async def add_profile_image(
