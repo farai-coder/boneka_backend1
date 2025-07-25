@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, status
 from database import get_db
 from models import User
-from schemas.auth_schema import AuthBase, AuthLogin, AuthResponse, LoginResponse, PasswordChange, PasswordResetRequest
+from schemas.auth_schema import AddPassword, AuthBase, AuthLogin, AuthResponse, LoginResponse, PasswordChange, PasswordResetRequest
 import bcrypt
 import string
 import secrets
@@ -46,8 +46,8 @@ auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @auth_router.post("/create_password", response_model=AuthResponse)
-def add_password(auth: AuthBase, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == auth.user_id).first()
+def add_password(auth: AddPassword, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == auth.email).first()
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
