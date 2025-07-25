@@ -21,6 +21,7 @@ class UserResponse(BaseModel):
     surname : str
     phone_number: Optional[str] = None
     personal_image_path: Optional[str]
+    user_id: UUID
     # business_image_path: Optional[str]
 
 
