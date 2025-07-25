@@ -8,9 +8,12 @@ import bcrypt
 import string
 import secrets
 
+# def verify_password(plain_password: str, hashed_password: str) -> bool:
+#     """Verifies if a given password matches the stored hash."""
+#     return bcrypt.checkpw(plain_password.encode(), hashed_password.encode()
+                          
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verifies if a given password matches the stored hash."""
-    return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
