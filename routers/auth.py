@@ -44,6 +44,7 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
 
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 
+
 @auth_router.post("/create_password", response_model=AuthResponse)
 def add_password(auth: AuthBase, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == auth.user_id).first()
